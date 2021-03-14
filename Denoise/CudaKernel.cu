@@ -26,12 +26,6 @@ __device__ __host__ void rgb2yuv(const float * rgb, float * out_yuv) {
     out_yuv[2] = rgb[0] * (0.615f) + rgb[1] * (-0.515f) + rgb[2] * (-0.1f);
 }
 
-__device__ __host__ void rgb2uv(const float* rgb, float* out_yuv) {
-    //out_yuv[0] = rgb[0] * (0.299f) + rgb[1] * (0.587f) + rgb[2] * (0.114f);
-    out_yuv[1] = rgb[0] * (-0.147f) + rgb[1] * (-0.289f) + rgb[2] * (0.436f);
-    out_yuv[2] = rgb[0] * (0.615f) + rgb[1] * (-0.515f) + rgb[2] * (-0.1f);
-}
-
 __device__ __host__ void yuv2rgb(const float * yuv, float * out_rgb) {
     out_rgb[0] = yuv[0] /* * (1.0f) + yuv[1] * (0.0f)*/ + yuv[2] * (1.14f);
     out_rgb[1] = yuv[0] /* * (1.0f)*/ + yuv[1] * (-0.395f) + yuv[2] * (-0.5806f);
@@ -52,10 +46,9 @@ __device__ __host__ void comparePatches(const int p_Width, const int p_Height, c
 
     float sigma = max(0.00001f, params[_amount]*params[_amount] * 0.2f);
 
-    #define WINDOW 1
+    //const int window = max(1,min(3,(int)params[_window]));
 
-    const float k_sigma_denom = 1.f / (sqrtf(2.0f * 3.141593f) * sigma);
-    const float k_2_sigma_squared_denom = 1.f / (2.0f * sigma * sigma);
+    #define WINDOW 1
 
     for (int i = -WINDOW; i <= WINDOW; i++)
     {
@@ -64,18 +57,18 @@ __device__ __host__ void comparePatches(const int p_Width, const int p_Height, c
             float pcurrent[3];
             float ocurrent[3];
 
-            rgb2uv(sample(p_Input, p_Width, p_Height, px + i, py + j), pcurrent);
-            rgb2uv(sample(p_Input, p_Width, p_Height, x + i, y + j), ocurrent);
+            rgb2yuv(sample(p_Input, p_Width, p_Height, px + i, py + j), pcurrent);
+            rgb2yuv(sample(p_Input, p_Width, p_Height, x + i, y + j), ocurrent);
 
-            //w[0] = expf(-(pcurrent[0] - ocurrent[0]) * (pcurrent[0] - ocurrent[0]) / (2.0f * sigma * sigma)) / (sqrtf(2.0f * 3.141593f) * sigma);
-            w[1] = expf(-(pcurrent[1] - ocurrent[1]) * (pcurrent[1] - ocurrent[1]) * k_2_sigma_squared_denom) * k_sigma_denom;
-            w[2] = expf(-(pcurrent[2] - ocurrent[2]) * (pcurrent[2] - ocurrent[2]) * k_2_sigma_squared_denom) * k_sigma_denom;
+            w[0] = expf(-(pcurrent[0] - ocurrent[0]) * (pcurrent[0] - ocurrent[0]) / (2.0f * sigma * sigma)) / (sqrtf(2.0f * 3.141593f) * sigma);
+            w[1] = expf(-(pcurrent[1] - ocurrent[1]) * (pcurrent[1] - ocurrent[1]) / (2.0f * sigma * sigma)) / (sqrtf(2.0f * 3.141593f) * sigma);
+            w[2] = expf(-(pcurrent[2] - ocurrent[2]) * (pcurrent[2] - ocurrent[2]) / (2.0f * sigma * sigma)) / (sqrtf(2.0f * 3.141593f) * sigma);
         }
     }
 
     const float k_denom = 1.0f / ((WINDOW + 1) * (2 * WINDOW + 1));
 
-    //result[0] = w[0] * k_denom;
+    result[0] = w[0] * k_denom;
     result[1] = w[1] * k_denom;
     result[2] = w[2] * k_denom;
 }
@@ -95,36 +88,37 @@ __device__ __host__ void InternalGainAdjustKernel(const int p_Width, const int p
     CLEARFLOAT3(processed);
     CLEARFLOAT3(weights);
 
-    #define KERNEL 6
+    const int kernel = min(8,max(1,(int)(params[_width])));
 
-    for (int i = -KERNEL; i <= KERNEL; i++)
+    for (int i = -kernel; i <= kernel; i++)
     {
-        for (int j = -KERNEL; j <= KERNEL; j++)
+        for (int j = -kernel; j <= kernel; j++)
         {
             int px = x + i;
             int py = y + j;
             
             float w[3];
+            CLEARFLOAT3(w);
 
             comparePatches(p_Width, p_Height, params, p_Input, px, py, x, y, w);
 
             const float* sampled = sample(p_Input, p_Width, p_Height, px, py);
             float sampledyuv[3];
-            rgb2uv(sampled, sampledyuv);
+            rgb2yuv(sampled, sampledyuv);
 
-            //processed[0] += w[0] * sampledyuv[0];
+            processed[0] += w[0] * sampledyuv[0];
             processed[1] += w[1] * sampledyuv[1];
             processed[2] += w[2] * sampledyuv[2];
 
-            //weights[0] += w[0];
+            weights[0] += w[0];
             weights[1] += w[1];
             weights[2] += w[2];
         }
     }
 
-    result[0] = yuv[0];
-    result[1] = processed[1] / max(0.0001f, weights[1]);
-    result[2] = processed[2] / max(0.0001f, weights[2]);
+    result[0] = lerp(yuv[0], processed[0] / max(0.0001f,weights[0]), params[_luminance]);
+    result[1] = lerp(yuv[1], processed[1] / max(0.0001f, weights[1]), params[_color]);
+    result[2] = lerp(yuv[2], processed[2] / max(0.0001f, weights[2]), params[_color]);
 
     yuv2rgb(result, p_Output);
 
