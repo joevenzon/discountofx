@@ -7,10 +7,10 @@
 #include "ofxsProcessing.h"
 #include "ofxsLog.h"
 
-#define kPluginName "DiscountDenoise"
+#define kPluginName "Denoise"
 #define kPluginGrouping "DiscountOFX"
-#define kPluginDescription "Cheap denoising using the non-local-means algorithm on color only"
-#define kPluginIdentifier "com.DiscountOFX.DiscountDenoise"
+#define kPluginDescription "Denoising using the non-local-means algorithm"
+#define kPluginIdentifier "com.DiscountOFX.Denoise"
 #define kPluginVersionMajor 1
 #define kPluginVersionMinor 0
 
