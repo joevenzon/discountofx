@@ -29,9 +29,9 @@ __device__ __host__ void InternalGainAdjustKernel(int x, int y, float* params, c
     p_Output[1] = origLum + pow(abs(distanceG), params[_exponent]) * params[_gain] * (distanceG >= 0 ? 1 : -1);
     p_Output[2] = origLum + pow(abs(distanceB), params[_exponent]) * params[_gain] * (distanceB >= 0 ? 1 : -1);*/
 
-    p_Output[0] = pow(p_Input[0], params[_gamma]);
-    p_Output[1] = pow(p_Input[1], params[_gamma]);
-    p_Output[2] = pow(p_Input[2], params[_gamma]);
+    p_Output[0] = pow(max(0.f, p_Input[0]), params[_gamma]);
+    p_Output[1] = pow(max(0.f, p_Input[1]), params[_gamma]);
+    p_Output[2] = pow(max(0.f, p_Input[2]), params[_gamma]);
 
     //float newLum = calcLuminance(p_Output[0], p_Output[1], p_Output[2]);
     //float makeup = lerp(1.0f, origLum / max(newLum,0.01f), params[_preserveLum]);
