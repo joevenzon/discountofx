@@ -5,6 +5,12 @@ This is a set of CUDA-accelerated OpenFX video plugins for use in programs like 
 
 There are also several false color LUTs to aid in color grading.
 
+## Installation
+
+Copy the <plugin>.ofx.bundle folders to C:\Program Files\Common Files\OFX\Plugins
+
+Copy the LUTs to C:\ProgramData\Blackmagic Design\DaVinci Resolve\Support\LUT
+
 ## OFX Filters
 
 ### Denoise
@@ -45,6 +51,10 @@ For example, if you want the output red channel to be composed mostly of red but
 
 The Preserve Luminance slider, when set to 1, normalizes the output to maintain the same luminance as the input.
 
+### Border Reference
+  
+This plugin draws pure black and white borders around your image. This allows you to get an easy visual reference for black and white levels and color temperature, even if your monitor isn't perfectly calibrated. The black and white border widths are adjustable, and you can make the top/bottom or left/right borders more prominent, or omit them.
+  
 ## LUTs
 
 ### GreyChecker
