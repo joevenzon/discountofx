@@ -1,0 +1,5 @@
+PARAMFLOAT(blackWidth, 0.1f, "Black width", "Black border width")
+PARAMFLOAT(whiteWidth, 0.1f, "White width", "White border width")
+PARAMFLOAT(topBottomPercent, 1.0f, "Top/bottom", "Top/bottom border enabled")
+PARAMFLOAT(leftRightPercent, 1.0f, "Left/right", "Left/right border enabled")
+PARAMCOUNT(count)
